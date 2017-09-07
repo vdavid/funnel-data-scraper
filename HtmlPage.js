@@ -5,11 +5,11 @@ module.exports = class HtmlPage {
     }
 
     async doesPageContainSelector(selector) {
-        return (await this.getElementCountBySelector(selector) > 0);
+        return await this.getElementCountBySelector(selector) > 0;
     }
 
     async getElementCountBySelector(selector) {
-        return count = await this.page.evaluate((selector) => {
+        return await this.page.evaluate((selector) => {
             return document.querySelectorAll(selector).length;
         }, selector);
     }

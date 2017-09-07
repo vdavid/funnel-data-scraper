@@ -27,9 +27,13 @@ module.exports = class IntercomHtmlPage extends HtmlPage {
         await this.setSimpleFilter('utm_medium', 'cpc');
         await this.setSimpleFilter('full_locale_code', 'hu-HU');
 
-        let userCount = await this.getUserCount(this.page);
-
+        let userCount = await this.getUserCount('Hungarian Google CPC');
         this.logger.log(userCount);
+
+        await this.setSimpleFilter('full_locale_code', 'ro-RO');
+
+        this.logger.log(await this.getUserCount('Romanian Google CPC'));
+
 
         return this.page.screenshot({path: 'screenshots/intercom.png'});
     }
@@ -49,10 +53,18 @@ module.exports = class IntercomHtmlPage extends HtmlPage {
             throw e;
         }
 
-        await this.page.waitForSelector('[data-attribute-name="' + filterName + '"]', {timeout: 0});
-        await this.page.click('[data-attribute-name="' + filterName + '"]');
-        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-child(1) input[type="radio"]');
+        if (!await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div input[type="text"]')) {
+            await this.page.waitForSelector('[data-attribute-name="' + filterName + '"]', {timeout: 0});
+            await this.page.click('[data-attribute-name="' + filterName + '"]');
+            await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-child(1) input[type="radio"]');
+        }
         await this.page.click('[data-attribute-name="' + filterName + '"] + div input[type="text"]');
+
+        /* Selects all text */
+        this.page.keyboard.down('Control');
+        this.page.press('a');
+        this.page.keyboard.up('Control');
+
         return this.page.type(value);
     }
 
@@ -71,7 +83,13 @@ module.exports = class IntercomHtmlPage extends HtmlPage {
             }, USER_COUNT_SELECTOR);
             return Number(userCountString.trim().replace(',', ''));
         } catch(e) {
-            this.logger.log('Apparently, 3 seconds was not enough. Comment was: ' + comment);
+            if (await this.doesPageContainSelector(USER_COUNT_CONTAINER_SELECTOR)
+                && !await this.doesPageContainSelector(USER_COUNT_SELECTOR)) {
+                return 0;
+            } else {
+                this.logger.log('Apparently, 3 seconds was not enough. Comment was: ' + comment);
+                throw e;
+            }
         }
     }
 };
