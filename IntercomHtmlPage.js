@@ -1,6 +1,6 @@
 const HtmlPage = require('./HtmlPage');
 
-module.exports = class IntercomHtmlPage extends HtmlPage {
+class IntercomHtmlPage extends HtmlPage {
     async login(credentials) {
         const LOGIN_PAGE_URL = 'https://app.intercom.io/admins/sign_in';
         const USERNAME_SELECTOR = '#admin_email';
@@ -19,21 +19,30 @@ module.exports = class IntercomHtmlPage extends HtmlPage {
     }
 
     async getCountForAllLocales() {
-        this.logger.log('Loading this.page...');
+        const LOCALES = ['hu-HU']; //, 'pl-PL', 'ro-RO', 'tr-TR'];
+        const UTMS = [
+            {source: 'google', medium: 'cpc'},
+            {source: 'google', medium: 'cpc-remarketing'},
+            //{source: 'google', medium: 'cpc-ismertsegfelepito'},
+            {source: 'facebook', medium: 'cpc-remarketing'},
+        ];
 
-        this.logger.log('Selecting utm_source...');
+        let userCounts = {};
 
-        await this.setSimpleFilter('utm_source', 'google');
-        await this.setSimpleFilter('utm_medium', 'cpc');
-        await this.setSimpleFilter('full_locale_code', 'hu-HU');
+        for (let i = 0; i < UTMS.length; i++) {
+            let utm = UTMS[i];
+            await this.setSimpleFilter('utm_source', utm.source);
+            await this.setSimpleFilter('utm_medium', utm.medium);
+            for (let j = 0; j < LOCALES.length; j++) {
+                let locale = LOCALES[j];
+                await this.setSimpleFilter('full_locale_code', locale);
+                let userCount = await this.getUserCount(locale + ' ' + utm.source + ' ' + utm.medium);
+                this.logger.log(userCount);
+                userCounts[locale + ' ' + utm.source + ' ' + utm.medium] = userCount;
+            }
+        }
 
-        let userCount = await this.getUserCount('Hungarian Google CPC');
-        this.logger.log(userCount);
-
-        await this.setSimpleFilter('full_locale_code', 'ro-RO');
-
-        this.logger.log(await this.getUserCount('Romanian Google CPC'));
-
+        this.logger.log(userCounts);
 
         return this.page.screenshot({path: 'screenshots/intercom.png'});
     }
@@ -48,7 +57,7 @@ module.exports = class IntercomHtmlPage extends HtmlPage {
                 await this.page.waitForSelector(MORE_FILTERS_BUTTON_SELECTOR);
                 await this.page.click(MORE_FILTERS_BUTTON_SELECTOR);
             }
-        } catch(e) {
+        } catch (e) {
             this.logger.log('"More" button was not found either. That\'s a problem.');
             throw e;
         }
@@ -78,11 +87,9 @@ module.exports = class IntercomHtmlPage extends HtmlPage {
         await this.page.waitForSelector(USER_COUNT_CONTAINER_SELECTOR);
 
         try {
-            let userCountString = await this.page.evaluate((selector) => {
-                return document.querySelector(selector).innerHTML;
-            }, USER_COUNT_SELECTOR);
+            let userCountString = await this.getInnerHtmlBySelector(USER_COUNT_SELECTOR);
             return Number(userCountString.trim().replace(',', ''));
-        } catch(e) {
+        } catch (e) {
             if (await this.doesPageContainSelector(USER_COUNT_CONTAINER_SELECTOR)
                 && !await this.doesPageContainSelector(USER_COUNT_SELECTOR)) {
                 return 0;
@@ -92,4 +99,6 @@ module.exports = class IntercomHtmlPage extends HtmlPage {
             }
         }
     }
-};
+}
+
+module.exports = IntercomHtmlPage;
