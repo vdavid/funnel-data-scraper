@@ -4,5 +4,8 @@
   "description": "codeBerry project for scraping several sites for funnel data",
   "main": "index.js",
   "author": "David Veszelovszki",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^0.10.2"
+  }
 }
