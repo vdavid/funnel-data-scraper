@@ -1,4 +1,4 @@
-module.exports = class HtmlPage {
+class HtmlPage {
     constructor(page, logger) {
         this.page = page;
         this.logger = logger;
@@ -15,8 +15,10 @@ module.exports = class HtmlPage {
     }
 
     async getInnerHtmlBySelector(selector) {
-        return this.page.evaluate((selector) => {
-            return document.querySelectorAll(selector).innerHTML;
+        return await this.page.evaluate((selector) => {
+            return document.querySelector(selector).innerHTML;
         }, selector);
     }
-};
+}
+
+module.exports = HtmlPage;
