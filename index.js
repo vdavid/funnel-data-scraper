@@ -24,7 +24,7 @@ async function run() {
     try {
         await page.waitForNavigation();
     } catch (e) {
-        console.log('Login didn\'t work.');
+        logger.log('Login didn\'t work.');
     }
 
     await page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
