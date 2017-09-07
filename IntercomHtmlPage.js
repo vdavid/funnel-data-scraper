@@ -19,30 +19,35 @@ class IntercomHtmlPage extends HtmlPage {
     }
 
     async getCountForAllLocales() {
-        const LOCALES = ['hu-HU']; //, 'pl-PL', 'ro-RO', 'tr-TR'];
-        const UTMS = [
-            {source: 'google', medium: 'cpc'},
-            {source: 'google', medium: 'cpc-remarketing'},
-            //{source: 'google', medium: 'cpc-ismertsegfelepito'},
-            {source: 'facebook', medium: 'cpc-remarketing'},
+        const LOCALE_AND_UTM_FILTERS = [
+            {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
+            // {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc'},
+            // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            // {locale: 'pl-PL', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            // {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc'},
+            // {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            // {locale: 'ro-RO', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            // {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc'},
+            // {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            // {locale: 'tr-TR', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
         ];
 
         let userCounts = {};
 
-        for (let i = 0; i < UTMS.length; i++) {
-            let utm = UTMS[i];
-            await this.setSimpleFilter('utm_source', utm.source);
-            await this.setSimpleFilter('utm_medium', utm.medium);
-            for (let j = 0; j < LOCALES.length; j++) {
-                let locale = LOCALES[j];
-                await this.setSimpleFilter('full_locale_code', locale);
-                let userCount = await this.getUserCount(locale + ' ' + utm.source + ' ' + utm.medium);
-                this.logger.log(userCount);
-                userCounts[locale + ' ' + utm.source + ' ' + utm.medium] = userCount;
-            }
+        for (let i = 0; i < LOCALE_AND_UTM_FILTERS.length; i++) {
+            let filter = LOCALE_AND_UTM_FILTERS[i];
+            await this.setSimpleFilter('utm_source', filter.utmSource);
+            await this.setSimpleFilter('utm_medium', filter.utmMedium);
+            await this.setSimpleFilter('full_locale_code', filter.locale);
+            let userCount = await this.getUserCount(filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium);
+            this.logger.log(userCount); // TODO: Only for testing. Remove.
+            userCounts[filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium] = userCount;
         }
 
-        this.logger.log(userCounts);
+        this.logger.log(userCounts.toString());
 
         return this.page.screenshot({path: 'screenshots/intercom.png'});
     }
