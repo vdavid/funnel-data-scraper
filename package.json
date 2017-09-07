@@ -1,0 +1,8 @@
+{
+  "name": "funnel-data-scraper",
+  "version": "1.0.0",
+  "description": "codeBerry project for scraping several sites for funnel data",
+  "main": "index.js",
+  "author": "David Veszelovszki",
+  "license": "MIT"
+}
