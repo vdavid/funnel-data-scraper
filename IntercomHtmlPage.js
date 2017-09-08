@@ -60,13 +60,9 @@ class IntercomHtmlPage extends HtmlPage {
             {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
             {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            {locale: 'pl-PL', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
             {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            {locale: 'ro-RO', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
             {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc'},
-            {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            {locale: 'tr-TR', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
         ];
 
         if (userCounts[metric] === undefined) {
