@@ -18,20 +18,29 @@ class IntercomHtmlPage extends HtmlPage {
         return this.page.click(SIGN_IN_BUTTON_SELECTOR);
     }
 
-    async getSlackCounts(firstDateToInclude, numberOfDaysToInclude) {
+    async getSlackNumbers(firstDateToInclude, numberOfDaysToInclude) {
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
 
         await this.setDateFilter('arrived_to_slack', firstDateToInclude, numberOfDaysToInclude);
 
-        return await this.getCountsForAllLocaleAndUtmSettings('slack');
+        return await this.getNumbersForAllLocaleAndUtmSettings('slack');
     }
 
-    async getCountsForAllLocaleAndUtmSettings(comment) {
+    async getPaymentFunnelNumbers(firstDateToInclude, numberOfDaysToInclude) {
+        await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
+
+        await this.setDateFilter('payment_invoicing_data_submitted', firstDateToInclude, numberOfDaysToInclude);
+
+        return await this.getNumbersForAllLocaleAndUtmSettings('payment');
+    }
+
+    async getNumbersForAllLocaleAndUtmSettings(comment) {
+        const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR'];
         const LOCALE_AND_UTM_FILTERS = [
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
-            {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            // {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
+            // {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
             // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc'},
             // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc-remarketing'},
             // {locale: 'pl-PL', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
@@ -45,13 +54,22 @@ class IntercomHtmlPage extends HtmlPage {
 
         let userCounts = {};
 
+        /* Collects blended numbers for each locale */
+        for (let i = 0; i < LOCALE_FILTERS.length; i++) {
+            let locale = LOCALE_FILTERS[i];
+            let key = comment + " " + locale + ' blended';
+            await this.setSimpleFilter('full_locale_code', locale);
+            userCounts[key] = await this.getUserCount(key);
+        }
+
+        /* Collects UTM-specific data */
         for (let i = 0; i < LOCALE_AND_UTM_FILTERS.length; i++) {
             let filter = LOCALE_AND_UTM_FILTERS[i];
+            let key = comment + " " + filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium;
             await this.setSimpleFilter('utm_source', filter.utmSource);
             await this.setSimpleFilter('utm_medium', filter.utmMedium);
             await this.setSimpleFilter('full_locale_code', filter.locale);
-            userCounts[comment + " " + filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium]
-                = await this.getUserCount(filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium);
+            userCounts[key] = await this.getUserCount(key);
         }
 
         return userCounts;
@@ -72,6 +90,10 @@ class IntercomHtmlPage extends HtmlPage {
         await this.page.keyboard.up('Control');
 
         return this.page.type(value);
+    }
+
+    async setNumberFilter(filterName, value) {
+
     }
 
     /**

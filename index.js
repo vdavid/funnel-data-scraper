@@ -27,7 +27,8 @@ async function run() {
         logger.log('Login didn\'t work.');
     }
 
-    let userCounts = await intercomHtmlPage.getSlackCounts(new Date('2017-08-28'), 7);
+    let userCounts = await intercomHtmlPage.getSlackNumbers(new Date('2017-08-28'), 7);
+    userCounts = Object.assign(userCounts, await intercomHtmlPage.getPaymentFunnelNumbers(new Date('2017-08-28'), 7));
     logger.log(JSON.stringify(userCounts));
 
     browser.close();
