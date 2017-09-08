@@ -34,6 +34,25 @@ class IntercomHtmlPage extends HtmlPage {
         return await this.getNumbersForAllLocaleAndUtmSettings('payment');
     }
 
+    async getSubmissionCountRelatedNumbers(firstDateToInclude, numberOfDaysToInclude) {
+        const SUBMISSION_COUNT_FILTER_VALUES = [0]; // TODO: , 4, 14];
+
+        await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
+
+        await this.setDateFilter('Signed up', firstDateToInclude, numberOfDaysToInclude);
+
+        let userCounts = {};
+
+        for (let i = 0; i < SUBMISSION_COUNT_FILTER_VALUES.length; i++) {
+            let submissionCount = SUBMISSION_COUNT_FILTER_VALUES[i];
+            await this.setSimpleFilter('total_submission_count', submissionCount);
+
+            userCounts = Object.assign(userCounts, await this.getNumbersForAllLocaleAndUtmSettings('submissions=' + submissionCount));
+        }
+
+        return userCounts;
+    }
+
     async getNumbersForAllLocaleAndUtmSettings(comment) {
         const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR'];
         const LOCALE_AND_UTM_FILTERS = [
@@ -82,18 +101,14 @@ class IntercomHtmlPage extends HtmlPage {
             await this.page.click('[data-attribute-name="' + filterName + '"]');
             await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-child(1) input[type="radio"]');
         }
-        await this.page.click('[data-attribute-name="' + filterName + '"] + div input[type="text"]');
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div input.f__text');
 
         /* Selects all text */
         await this.page.keyboard.down('Control');
         await this.page.press('a');
         await this.page.keyboard.up('Control');
 
-        return this.page.type(value);
-    }
-
-    async setNumberFilter(filterName, value) {
-
+        return this.page.type(value.toString());
     }
 
     /**
@@ -114,15 +129,26 @@ class IntercomHtmlPage extends HtmlPage {
         await this.pressMoreFiltersButtonIfNeeded(filterName);
 
         /* Opens filter if needed */
+        let filterHasCheckboxes = false;
         let filterWasClosed = !await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div select');
         if (filterWasClosed) {
             this.logger.log('Opening filter ' + filterName + '...');
             await this.page.click('[data-attribute-name="' + filterName + '"]');
-            await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(2) input[type="checkbox"]');
+            filterHasCheckboxes = await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(2) input[type="checkbox"]');
+            if (filterHasCheckboxes) {
+                await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(2) input[type="checkbox"]');
+            }
             /* Opens second part of the filter too */
             await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4)');
-            await this.page.click('[data-attribute-name="' + filterName + '"] + div button');
+            if (filterHasCheckboxes) {
+                await this.page.click('[data-attribute-name="' + filterName + '"] + div button');
+            } else {
+                await this.page.click('[data-attribute-name="' + filterName + '"] + div + span button');
+            }
+        } else {
+            filterHasCheckboxes = await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(2) input[type="checkbox"]');
         }
+        this.logger.log('Has checkboxes: ' + (filterHasCheckboxes ? 'yes' : 'no'));
 
         /* Lower bound*/
         await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4)');
@@ -135,12 +161,18 @@ class IntercomHtmlPage extends HtmlPage {
         await this.page.press("Tab");
 
         /* Upper bound */
-        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6)');
-        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6) + div select:nth-child(1)');
+        let upperBoundContainerSelector = '[data-attribute-name="' + filterName + '"] + div '
+            + (filterHasCheckboxes ? '> div > div:nth-of-type(3)' : '+ div')
+        + ' label:nth-of-type(6)';
+        await this.page.click(upperBoundContainerSelector);
+        if (!filterHasCheckboxes) {
+            upperBoundContainerSelector = '[data-attribute-name="' + filterName + '"] + div + div + div label:nth-of-type(6)';
+        }
+        await this.page.click(upperBoundContainerSelector + ' + div select:nth-child(1)');
         await this.page.type(upperDateFilterComponents.month);
-        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6) + div select:nth-child(2)');
+        await this.page.click(upperBoundContainerSelector + ' + div select:nth-child(2)');
         await this.page.type(upperDateFilterComponents.day.toString());
-        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6) + div select:nth-child(3)');
+        await this.page.click(upperBoundContainerSelector + ' + div select:nth-child(3)');
         await this.page.type(upperDateFilterComponents.year.toString());
         await this.page.press("Tab");
     }
