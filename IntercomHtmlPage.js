@@ -18,77 +18,79 @@ class IntercomHtmlPage extends HtmlPage {
         return this.page.click(SIGN_IN_BUTTON_SELECTOR);
     }
 
-    async getSlackNumbers(firstDateToInclude, numberOfDaysToInclude) {
+    async getSlackNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
 
         await this.setDateFilter('arrived_to_slack', firstDateToInclude, numberOfDaysToInclude);
 
-        return await this.getNumbersForAllLocaleAndUtmSettings('slack');
+        return await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'slack');
     }
 
-    async getPaymentFunnelNumbers(firstDateToInclude, numberOfDaysToInclude) {
+    async getPaymentFunnelNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
 
         await this.setDateFilter('payment_invoicing_data_submitted', firstDateToInclude, numberOfDaysToInclude);
 
-        return await this.getNumbersForAllLocaleAndUtmSettings('payment');
+        return await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'payment');
     }
 
-    async getSubmissionCountRelatedNumbers(firstDateToInclude, numberOfDaysToInclude) {
-        const SUBMISSION_COUNT_FILTER_VALUES = [0]; // TODO: , 4, 14];
+    async getSubmissionCountRelatedNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
+        const SUBMISSION_COUNT_FILTER_VALUES = [0, 4, 14];
 
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
 
         await this.setDateFilter('Signed up', firstDateToInclude, numberOfDaysToInclude);
 
-        let userCounts = {};
-
         for (let i = 0; i < SUBMISSION_COUNT_FILTER_VALUES.length; i++) {
             let submissionCount = SUBMISSION_COUNT_FILTER_VALUES[i];
             await this.setSimpleFilter('total_submission_count', submissionCount);
 
-            userCounts = Object.assign(userCounts, await this.getNumbersForAllLocaleAndUtmSettings('submissions=' + submissionCount));
+            userCounts = await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'submissions=' + submissionCount);
         }
 
         return userCounts;
     }
 
-    async getNumbersForAllLocaleAndUtmSettings(comment) {
+    async getNumbersForAllLocaleAndUtmSettings(userCounts, metric) {
         const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR'];
         const LOCALE_AND_UTM_FILTERS = [
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            // {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
-            // {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
-            // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc'},
-            // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            // {locale: 'pl-PL', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
-            // {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc'},
-            // {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            // {locale: 'ro-RO', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
-            // {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc'},
-            // {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            // {locale: 'tr-TR', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
+            {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            {locale: 'pl-PL', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            {locale: 'ro-RO', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            {locale: 'tr-TR', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
         ];
 
-        let userCounts = {};
+        if (userCounts[metric] === undefined) {
+            userCounts[metric] = {};
+            for (let i = 0; i < LOCALE_FILTERS.length; i++) {
+                let locale = LOCALE_FILTERS[i];
+                userCounts[metric][locale] = {};
+            }
+        }
 
         /* Collects blended numbers for each locale */
         for (let i = 0; i < LOCALE_FILTERS.length; i++) {
             let locale = LOCALE_FILTERS[i];
-            let key = comment + " " + locale + ' blended';
             await this.setSimpleFilter('full_locale_code', locale);
-            userCounts[key] = await this.getUserCount(key);
+            userCounts[metric][locale]['blended'] = await this.getUserCount();
         }
 
         /* Collects UTM-specific data */
         for (let i = 0; i < LOCALE_AND_UTM_FILTERS.length; i++) {
             let filter = LOCALE_AND_UTM_FILTERS[i];
-            let key = comment + " " + filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium;
             await this.setSimpleFilter('utm_source', filter.utmSource);
             await this.setSimpleFilter('utm_medium', filter.utmMedium);
             await this.setSimpleFilter('full_locale_code', filter.locale);
-            userCounts[key] = await this.getUserCount(key);
+            userCounts[metric][filter.locale][filter.utmSource + ' ' + filter.utmMedium] = await this.getUserCount();
         }
 
         return userCounts;
@@ -97,7 +99,7 @@ class IntercomHtmlPage extends HtmlPage {
     async setSimpleFilter(filterName, value) {
         await this.pressMoreFiltersButtonIfNeeded(filterName);
 
-        if (!await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div input[type="text"]')) {
+        if (!await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div input.f__text')) {
             await this.page.click('[data-attribute-name="' + filterName + '"]');
             await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-child(1) input[type="radio"]');
         }
@@ -123,8 +125,6 @@ class IntercomHtmlPage extends HtmlPage {
         let upperBoundDate = new Date(firstDateToInclude.getTime() + numberOfDaysToInclude * 24 * 60 * 60 * 1000);
         let lowerDateFilterComponents = IntercomHtmlPage.convertDateToComponents(lowerBoundDate);
         let upperDateFilterComponents = IntercomHtmlPage.convertDateToComponents(upperBoundDate);
-        //this.logger.log(JSON.stringify(lowerDateFilterComponents));
-        //this.logger.log(JSON.stringify(upperDateFilterComponents));
 
         await this.pressMoreFiltersButtonIfNeeded(filterName);
 
@@ -132,7 +132,6 @@ class IntercomHtmlPage extends HtmlPage {
         let filterHasCheckboxes = false;
         let filterWasClosed = !await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div select');
         if (filterWasClosed) {
-            this.logger.log('Opening filter ' + filterName + '...');
             await this.page.click('[data-attribute-name="' + filterName + '"]');
             filterHasCheckboxes = await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(2) input[type="checkbox"]');
             if (filterHasCheckboxes) {
@@ -148,7 +147,6 @@ class IntercomHtmlPage extends HtmlPage {
         } else {
             filterHasCheckboxes = await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(2) input[type="checkbox"]');
         }
-        this.logger.log('Has checkboxes: ' + (filterHasCheckboxes ? 'yes' : 'no'));
 
         /* Lower bound*/
         await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4)');
@@ -163,7 +161,7 @@ class IntercomHtmlPage extends HtmlPage {
         /* Upper bound */
         let upperBoundContainerSelector = '[data-attribute-name="' + filterName + '"] + div '
             + (filterHasCheckboxes ? '> div > div:nth-of-type(3)' : '+ div')
-        + ' label:nth-of-type(6)';
+            + ' label:nth-of-type(6)';
         await this.page.click(upperBoundContainerSelector);
         if (!filterHasCheckboxes) {
             upperBoundContainerSelector = '[data-attribute-name="' + filterName + '"] + div + div + div label:nth-of-type(6)';
@@ -192,7 +190,7 @@ class IntercomHtmlPage extends HtmlPage {
         }
     }
 
-    async getUserCount(comment = "") {
+    async getUserCount() {
         const USER_COUNT_CONTAINER_SELECTOR = '.t__h1.u__left';
         const USER_COUNT_SELECTOR = 'span.user_count.test__user-company-count';
 
@@ -209,7 +207,7 @@ class IntercomHtmlPage extends HtmlPage {
                 && !await this.doesPageContainSelector(USER_COUNT_SELECTOR)) {
                 return 0;
             } else {
-                this.logger.log('Apparently, 3 seconds was not enough. Comment was: ' + comment);
+                this.logger.log('Apparently, 3 seconds was not enough.');
                 throw e;
             }
         }

@@ -10,13 +10,15 @@ class Logger {
 
 async function run() {
     const CREDENTIALS = require('./credentials');
-    //const segmentNames = ['slack', 'submissions', 'paymentFunnel'];
+    const FIRST_DAY_OF_WEEK_TO_SCRAPE = new Date('2017-08-28');
 
     const browser = await puppeteer.launch({
         headless: false,
     });
     const logger = new Logger();
     const page = await browser.newPage();
+
+    logger.log('Started.');
 
     const intercomHtmlPage = new IntercomHtmlPage(page, logger);
     await intercomHtmlPage.login(CREDENTIALS);
@@ -27,12 +29,13 @@ async function run() {
         logger.log('Login didn\'t work.');
     }
 
-    let userCounts = Object.assign({}, await intercomHtmlPage.getSubmissionCountRelatedNumbers(new Date('2017-08-28'), 7));
-
-    // let userCounts = await intercomHtmlPage.getSlackNumbers(new Date('2017-08-28'), 7);
-    // userCounts = Object.assign(userCounts, await intercomHtmlPage.getPaymentFunnelNumbers(new Date('2017-08-28'), 7));
-    // userCounts = Object.assign(userCounts, await intercomHtmlPage.getSubmissionCountRelatedNumbers(new Date('2017-08-28'), 7));
+    let userCounts = {};
+    userCounts = await intercomHtmlPage.getSlackNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, 7);
+    userCounts = await intercomHtmlPage.getPaymentFunnelNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, 7);
+    userCounts = await intercomHtmlPage.getSubmissionCountRelatedNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, 7);
     logger.log(JSON.stringify(userCounts));
+
+    logger.log('Finished.');
 
     browser.close();
 }
