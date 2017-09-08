@@ -61,7 +61,7 @@ class IntercomHtmlPage extends HtmlPage {
     }
 
     async getNumbersForAllLocaleAndUtmSettings(userCounts, metric) {
-        const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR', 'en-US'];
+        const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR'];
         const LOCALE_AND_UTM_FILTERS = [
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc-remarketing'},
@@ -72,10 +72,6 @@ class IntercomHtmlPage extends HtmlPage {
             {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc-remarketing'},
             {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc'},
-            {locale: 'en-US', utmSource: 'google', utmMedium: 'cpc'},
-            {locale: 'en-US', utmSource: 'google', utmMedium: 'cpc-remarketing'},
-            {locale: 'en-US', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
-            {locale: 'en-US', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
         ];
 
         if (userCounts[metric] === undefined) {
@@ -132,8 +128,8 @@ class IntercomHtmlPage extends HtmlPage {
     async setDateFilter(filterName, firstDateToInclude, numberOfDaysToInclude) {
         let lowerBoundDate = new Date(firstDateToInclude.getTime() - 24 * 60 * 60 * 1000);
         let upperBoundDate = new Date(firstDateToInclude.getTime() + numberOfDaysToInclude * 24 * 60 * 60 * 1000);
-        let lowerBound = IntercomHtmlPage.convertDateToComponents(lowerBoundDate);
-        let upperBound = IntercomHtmlPage.convertDateToComponents(upperBoundDate);
+        let lowerDateFilterComponents = IntercomHtmlPage.convertDateToComponents(lowerBoundDate);
+        let upperDateFilterComponents = IntercomHtmlPage.convertDateToComponents(upperBoundDate);
 
         await this.pressMoreFiltersButtonIfNeeded(filterName);
 
@@ -159,8 +155,13 @@ class IntercomHtmlPage extends HtmlPage {
 
         /* Lower bound*/
         await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4)');
-        await this.setDate('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4)',
-            lowerBound.year, lowerBound.month, lowerBound.day);
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4) + div select:nth-child(1)');
+        await this.page.type(lowerDateFilterComponents.month);
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4) + div select:nth-of-type(2)');
+        await this.page.type(lowerDateFilterComponents.day.toString());
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4) + div select:nth-child(3)');
+        await this.page.type(lowerDateFilterComponents.year.toString());
+        await this.page.press("Tab");
 
         /* Upper bound */
         let upperBoundContainerSelector = '[data-attribute-name="' + filterName + '"] + div '
@@ -170,31 +171,13 @@ class IntercomHtmlPage extends HtmlPage {
         if (!filterHasCheckboxes) {
             upperBoundContainerSelector = '[data-attribute-name="' + filterName + '"] + div + div + div label:nth-of-type(6)';
         }
-        await this.setDate(upperBoundContainerSelector, upperBound.year, upperBound.month, upperBound.day);
-    }
-
-    async setDate(containerSelector, year, month, day) {
-        /* Month */
-        await this.page.click(containerSelector + ' + div select:nth-child(1)');
-        await this.page.type(month);
-
-        /* Day */
-        await this.page.click(containerSelector + ' + div select:nth-child(2)');
-        if (day.length > 1) { /* Two-digit numbers can be typed straight away. */
-            await this.page.type(day);
-        } else { /* One-digit numbers can't be typed because they jump to the wrong place. This is a hack. */
-            for(let i = 0; i < 32; i++) {
-                await this.page.press('ArrowUp');
-            }
-            if (day !== "1") {
-                await this.page.type(day);
-            }
-        }
-
-        /* Year */
-        await this.page.click(containerSelector + ' + div select:nth-child(3)');
-        await this.page.type(year);
-        await this.page.press('Tab');
+        await this.page.click(upperBoundContainerSelector + ' + div select:nth-child(1)');
+        await this.page.type(upperDateFilterComponents.month);
+        await this.page.click(upperBoundContainerSelector + ' + div select:nth-child(2)');
+        await this.page.type(upperDateFilterComponents.day.toString());
+        await this.page.click(upperBoundContainerSelector + ' + div select:nth-child(3)');
+        await this.page.type(upperDateFilterComponents.year.toString());
+        await this.page.press("Tab");
     }
 
     async pressMoreFiltersButtonIfNeeded(filterName) {
@@ -235,13 +218,14 @@ class IntercomHtmlPage extends HtmlPage {
         }
     }
 
+
     static convertDateToComponents(date) {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
         return {
-            year: date.getFullYear().toString(),
+            year: date.getFullYear(),
             month: months[date.getMonth()],
-            day: date.getDate().toString()
+            day: date.getDate()
         };
     }
 }
