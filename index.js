@@ -10,7 +10,8 @@ class Logger {
 
 async function run() {
     const CREDENTIALS = require('./credentials');
-    const FIRST_DAY_OF_WEEK_TO_SCRAPE = new Date('2017-08-28');
+    const FIRST_DAY_OF_WEEK_TO_SCRAPE = new Date('2017-09-04');
+    const DAY_COUNT_TO_SCRAPE = 7; /* 7 days are one week :) */
 
     const browser = await puppeteer.launch({
         headless: false,
@@ -30,9 +31,10 @@ async function run() {
     }
 
     let userCounts = {};
-    userCounts = await intercomHtmlPage.getSlackNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, 7);
-    userCounts = await intercomHtmlPage.getSubmissionCountRelatedNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, 7);
-    userCounts = await intercomHtmlPage.getPaymentFunnelNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, 7);
+    userCounts = await intercomHtmlPage.getTrialSignupNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
+    userCounts = await intercomHtmlPage.getSlackNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
+    userCounts = await intercomHtmlPage.getSubmissionCountRelatedNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
+    userCounts = await intercomHtmlPage.getPaymentFunnelNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
 
     logger.log(JSON.stringify(userCounts));
     logger.log(await convertOutputToCsv(userCounts));
