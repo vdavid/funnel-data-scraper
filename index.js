@@ -27,13 +27,8 @@ async function run() {
         logger.log('Login didn\'t work.');
     }
 
-    await page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
-
-    await intercomHtmlPage.getCountForAllLocales();
-
-//    await page.waitFor(2 * 1000);
-
-    await page.screenshot({path: 'screenshots/github.png'});
+    let userCounts = await intercomHtmlPage.getSlackCounts(new Date('2017-08-28'), 7);
+    logger.log(JSON.stringify(userCounts));
 
     browser.close();
 }

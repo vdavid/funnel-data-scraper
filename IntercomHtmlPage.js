@@ -18,12 +18,20 @@ class IntercomHtmlPage extends HtmlPage {
         return this.page.click(SIGN_IN_BUTTON_SELECTOR);
     }
 
-    async getCountForAllLocales() {
+    async getSlackCounts(firstDateToInclude, numberOfDaysToInclude) {
+        await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
+
+        await this.setDateFilter('arrived_to_slack', firstDateToInclude, numberOfDaysToInclude);
+
+        return await this.getCountsForAllLocaleAndUtmSettings('slack');
+    }
+
+    async getCountsForAllLocaleAndUtmSettings(comment) {
         const LOCALE_AND_UTM_FILTERS = [
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc-remarketing'},
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
-            // {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
+            {locale: 'hu-HU', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
             // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc'},
             // {locale: 'pl-PL', utmSource: 'google', utmMedium: 'cpc-remarketing'},
             // {locale: 'pl-PL', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
@@ -42,20 +50,82 @@ class IntercomHtmlPage extends HtmlPage {
             await this.setSimpleFilter('utm_source', filter.utmSource);
             await this.setSimpleFilter('utm_medium', filter.utmMedium);
             await this.setSimpleFilter('full_locale_code', filter.locale);
-            let userCount = await this.getUserCount(filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium);
-            this.logger.log(userCount); // TODO: Only for testing. Remove.
-            userCounts[filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium] = userCount;
+            userCounts[comment + " " + filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium]
+                = await this.getUserCount(filter.locale + ' ' + filter.utmSource + ' ' + filter.utmMedium);
         }
 
-        this.logger.log(userCounts.toString());
-
-        return this.page.screenshot({path: 'screenshots/intercom.png'});
+        return userCounts;
     }
 
     async setSimpleFilter(filterName, value) {
+        await this.pressMoreFiltersButtonIfNeeded(filterName);
+
+        if (!await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div input[type="text"]')) {
+            await this.page.click('[data-attribute-name="' + filterName + '"]');
+            await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-child(1) input[type="radio"]');
+        }
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div input[type="text"]');
+
+        /* Selects all text */
+        await this.page.keyboard.down('Control');
+        await this.page.press('a');
+        await this.page.keyboard.up('Control');
+
+        return this.page.type(value);
+    }
+
+    /**
+     *
+     * @param {string} filterName
+     * @param {Date} firstDateToInclude
+     * @param {Number} numberOfDaysToInclude
+     * @returns {Promise.<void>}
+     */
+    async setDateFilter(filterName, firstDateToInclude, numberOfDaysToInclude) {
+        let lowerBoundDate = new Date(firstDateToInclude.getTime() - 24 * 60 * 60 * 1000);
+        let upperBoundDate = new Date(firstDateToInclude.getTime() + numberOfDaysToInclude * 24 * 60 * 60 * 1000);
+        let lowerDateFilterComponents = IntercomHtmlPage.convertDateToComponents(lowerBoundDate);
+        let upperDateFilterComponents = IntercomHtmlPage.convertDateToComponents(upperBoundDate);
+        //this.logger.log(JSON.stringify(lowerDateFilterComponents));
+        //this.logger.log(JSON.stringify(upperDateFilterComponents));
+
+        await this.pressMoreFiltersButtonIfNeeded(filterName);
+
+        /* Opens filter if needed */
+        let filterWasClosed = !await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div select');
+        if (filterWasClosed) {
+            this.logger.log('Opening filter ' + filterName + '...');
+            await this.page.click('[data-attribute-name="' + filterName + '"]');
+            await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(2) input[type="checkbox"]');
+            /* Opens second part of the filter too */
+            await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4)');
+            await this.page.click('[data-attribute-name="' + filterName + '"] + div button');
+        }
+
+        /* Lower bound*/
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4)');
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4) + div select:nth-child(1)');
+        await this.page.type(lowerDateFilterComponents.month);
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4) + div select:nth-of-type(2)');
+        await this.page.type(lowerDateFilterComponents.day.toString());
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-of-type(4) + div select:nth-child(3)');
+        await this.page.type(lowerDateFilterComponents.year.toString());
+        await this.page.press("Tab");
+
+        /* Upper bound */
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6)');
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6) + div select:nth-child(1)');
+        await this.page.type(upperDateFilterComponents.month);
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6) + div select:nth-child(2)');
+        await this.page.type(upperDateFilterComponents.day.toString());
+        await this.page.click('[data-attribute-name="' + filterName + '"] + div > div > div:nth-of-type(3) label:nth-of-type(6) + div select:nth-child(3)');
+        await this.page.type(upperDateFilterComponents.year.toString());
+        await this.page.press("Tab");
+    }
+
+    async pressMoreFiltersButtonIfNeeded(filterName) {
         const MORE_FILTERS_BUTTON_SELECTOR = '.js__filters-list > a';
 
-        /* Presses "more filters" button if needed */
         try {
             if (!await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"]')) {
                 this.logger.log('Filter "' + filterName + '" was not found. Clicking "more"...');
@@ -66,20 +136,6 @@ class IntercomHtmlPage extends HtmlPage {
             this.logger.log('"More" button was not found either. That\'s a problem.');
             throw e;
         }
-
-        if (!await this.doesPageContainSelector('[data-attribute-name="' + filterName + '"] + div input[type="text"]')) {
-            await this.page.waitForSelector('[data-attribute-name="' + filterName + '"]', {timeout: 0});
-            await this.page.click('[data-attribute-name="' + filterName + '"]');
-            await this.page.click('[data-attribute-name="' + filterName + '"] + div label:nth-child(1) input[type="radio"]');
-        }
-        await this.page.click('[data-attribute-name="' + filterName + '"] + div input[type="text"]');
-
-        /* Selects all text */
-        this.page.keyboard.down('Control');
-        this.page.press('a');
-        this.page.keyboard.up('Control');
-
-        return this.page.type(value);
     }
 
     async getUserCount(comment = "") {
@@ -103,6 +159,17 @@ class IntercomHtmlPage extends HtmlPage {
                 throw e;
             }
         }
+    }
+
+
+    static convertDateToComponents(date) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        return {
+            year: date.getFullYear(),
+            month: months[date.getMonth()],
+            day: date.getDate()
+        };
     }
 }
 
