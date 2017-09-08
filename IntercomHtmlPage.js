@@ -45,7 +45,7 @@ class IntercomHtmlPage extends HtmlPage {
             let submissionCount = SUBMISSION_COUNT_FILTER_VALUES[i];
             await this.setSimpleFilter('total_submission_count', submissionCount);
 
-            userCounts = await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'submissions=' + submissionCount);
+            userCounts = await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'submissions>' + submissionCount);
         }
 
         return userCounts;
