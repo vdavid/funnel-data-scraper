@@ -19,6 +19,18 @@ class HtmlPage {
             return document.querySelector(selector).innerHTML;
         }, selector);
     }
+
+    // async setFieldValue(selector, value) {
+    //     this.page.evaluate((selector, value) => {
+    //         return document.querySelector(selector).value = value;
+    //     }, selector, value)
+    // }
+    //
+    // async getFieldValue(selector) {
+    //     return this.page.evaluate((selector) => {
+    //         return document.querySelector(selector).value;
+    //     }, selector)
+    // }
 }
 
 module.exports = HtmlPage;
