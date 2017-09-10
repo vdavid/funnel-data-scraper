@@ -180,15 +180,11 @@ class IntercomHtmlPage extends HtmlPage {
 
         /* Day */
         await this.page.click(containerSelector + ' + div select:nth-child(2)');
-        if (day.length > 1) { /* Two-digit numbers can be typed straight away. */
+        for (let i = 0; i < 32; i++) {
+            await this.page.press('ArrowUp');
+        }
+        if (day !== "1") {
             await this.page.type(day);
-        } else { /* One-digit numbers can't be typed because they jump to the wrong place. This is a hack. */
-            for (let i = 0; i < 32; i++) {
-                await this.page.press('ArrowUp');
-            }
-            if (day !== "1") {
-                await this.page.type(day);
-            }
         }
 
         /* Year */
