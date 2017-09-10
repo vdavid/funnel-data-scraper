@@ -18,14 +18,14 @@ class IntercomHtmlPage extends HtmlPage {
         return this.page.click(SIGN_IN_BUTTON_SELECTOR);
     }
 
-
-    async getTrialSignupNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
-        await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
-
-        await this.setDateFilter('trigger_welcome_message', firstDateToInclude, numberOfDaysToInclude);
-
-        return await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'trialSignup');
-    }
+    // // Unreliable numbers, except blended.
+    // async getTrialSignupNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
+    //     await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
+    //
+    //     await this.setDateFilter('trigger_welcome_message', firstDateToInclude, numberOfDaysToInclude);
+    //
+    //     return await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'trialSignup');
+    // }
 
     async getSlackNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
