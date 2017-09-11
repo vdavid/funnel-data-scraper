@@ -46,12 +46,13 @@ class IntercomHtmlPage extends HtmlPage {
     async getSubmissionCountRelatedNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
         const SUBMISSION_COUNT_FILTER_VALUES = [0, 4, 14];
 
-        await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
-
-        await this.setDateFilter('Signed up', firstDateToInclude, numberOfDaysToInclude);
-
         for (let i = 0; i < SUBMISSION_COUNT_FILTER_VALUES.length; i++) {
             let submissionCount = SUBMISSION_COUNT_FILTER_VALUES[i];
+
+            await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
+
+            await this.setDateFilter('Signed up', firstDateToInclude, numberOfDaysToInclude);
+
             await this.setSimpleFilter('total_submission_count', submissionCount);
 
             userCounts = await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'submissions>' + submissionCount);
