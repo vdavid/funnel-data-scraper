@@ -32,7 +32,8 @@ class IntercomHtmlPage extends HtmlPage {
 
         await this.setDateFilter('arrived_to_slack', firstDateToInclude, numberOfDaysToInclude);
 
-        return await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'slack');
+        userCounts['slack'] = await this.getNumbersForAllLocaleAndUtmSettings();
+        return userCounts;
     }
 
     async getPaymentFunnelNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
@@ -40,7 +41,8 @@ class IntercomHtmlPage extends HtmlPage {
 
         await this.setDateFilter('payment_invoicing_data_submitted', firstDateToInclude, numberOfDaysToInclude);
 
-        return await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'payment');
+        userCounts['payment'] = await this.getNumbersForAllLocaleAndUtmSettings();
+        return userCounts;
     }
 
     async getSubmissionCountRelatedNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
@@ -55,13 +57,13 @@ class IntercomHtmlPage extends HtmlPage {
 
             await this.setSimpleFilter('total_submission_count', submissionCount);
 
-            userCounts = await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'submissions>' + submissionCount);
+            userCounts['submissions>' + submissionCount] = await this.getNumbersForAllLocaleAndUtmSettings();
         }
 
         return userCounts;
     }
 
-    async getNumbersForAllLocaleAndUtmSettings(userCounts, metric) {
+    async getNumbersForAllLocaleAndUtmSettings() {
         const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR', 'en-US', 'hi-IN', 'id-ID', 'vi-VN'];
         const LOCALE_AND_UTM_FILTERS = [
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
@@ -85,20 +87,19 @@ class IntercomHtmlPage extends HtmlPage {
             {locale: 'en-US', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
             {locale: 'en-US', utmSource: 'facebook', utmMedium: 'cpc-remarketing'},
         ];
-
-        if (userCounts[metric] === undefined) {
-            userCounts[metric] = {};
-            for (let i = 0; i < LOCALE_FILTERS.length; i++) {
-                let locale = LOCALE_FILTERS[i];
-                userCounts[metric][locale] = {};
-            }
+        let userCounts = {};
+        let utmSpecificTotals = {};
+        for (let i = 0; i < LOCALE_FILTERS.length; i++) {
+            let locale = LOCALE_FILTERS[i];
+            userCounts[locale] = {};
+            utmSpecificTotals[locale] = 0;
         }
 
         /* Collects blended numbers for each locale */
         for (let i = 0; i < LOCALE_FILTERS.length; i++) {
             let locale = LOCALE_FILTERS[i];
             await this.setSimpleFilter('full_locale_code', locale);
-            userCounts[metric][locale]['blended'] = await this.getUserCount();
+            userCounts[locale]['blended'] = await this.getUserCount();
         }
 
         /* Collects UTM-specific data */
@@ -107,7 +108,14 @@ class IntercomHtmlPage extends HtmlPage {
             await this.setSimpleFilter('utm_source', filter.utmSource);
             await this.setSimpleFilter('utm_medium', filter.utmMedium);
             await this.setSimpleFilter('full_locale_code', filter.locale);
-            userCounts[metric][filter.locale][filter.utmSource + ' ' + filter.utmMedium] = await this.getUserCount();
+            userCounts[filter.locale][filter.utmSource + ' ' + filter.utmMedium] = await this.getUserCount();
+            utmSpecificTotals[filter.locale] += userCounts[filter.locale][filter.utmSource + ' ' + filter.utmMedium];
+        }
+
+        /* Adds "other" */
+        for (let i = 0; i < LOCALE_FILTERS.length; i++) {
+            let locale = LOCALE_FILTERS[i];
+            userCounts[locale]['other'] = userCounts[locale]['blended'] - utmSpecificTotals[locale];
         }
 
         return userCounts;
