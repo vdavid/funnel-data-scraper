@@ -45,23 +45,20 @@ async function run() {
 
 async function convertOutputToCsv(userCounts) {
     const outputArray = [];
-    for (let metric in userCounts) {
-        if (userCounts.hasOwnProperty(metric)) {
-            let metricArray = [];
-            metricArray.push(metric);
-            for (let locale in userCounts[metric]) {
-                if (userCounts[metric].hasOwnProperty(locale)) {
-                    for (let utm in userCounts[metric][locale]) {
-                        if (userCounts[metric][locale].hasOwnProperty(utm)) {
-                            metricArray.push(userCounts[metric][locale][utm]);
-                        }
-                    }
-                    metricArray.push('');
-                }
-            }
-            outputArray.push(metricArray);
-        }
-    }
+
+    Object.keys(userCounts).forEach(metric => {
+        let metricArray = [];
+        metricArray.push(metric);
+
+        Object.keys(userCounts[metric]).forEach(locale => {
+            Object.keys(userCounts[metric][locale]).forEach(utm => {
+                metricArray.push(userCounts[metric][locale][utm]);
+            });
+            metricArray.push('');
+        });
+        outputArray.push(metricArray);
+    });
+
     return matrixToCsv(transpose(outputArray));
 }
 
