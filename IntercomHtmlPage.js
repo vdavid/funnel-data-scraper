@@ -18,14 +18,14 @@ class IntercomHtmlPage extends HtmlPage {
         return this.page.click(SIGN_IN_BUTTON_SELECTOR);
     }
 
-    // // Unreliable numbers, except blended.
-    // async getTrialSignupNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
-    //     await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
-    //
-    //     await this.setDateFilter('trigger_welcome_message', firstDateToInclude, numberOfDaysToInclude);
-    //
-    //     return await this.getNumbersForAllLocaleAndUtmSettings(userCounts, 'trialSignup');
-    // }
+    async getTrialSignupNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
+        await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
+
+        await this.setDateFilter('trigger_welcome_message', firstDateToInclude, numberOfDaysToInclude);
+
+        userCounts['trialSignup'] = await this.getNumbersForAllLocaleAndUtmSettings();
+        return userCounts;
+    }
 
     async getSlackNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
@@ -247,9 +247,9 @@ class IntercomHtmlPage extends HtmlPage {
         /* Waits 3 seconds – it's kind of a random interval but it should work. */
         await this.page.waitFor(3000);
 
-        await this.page.waitForSelector(USER_COUNT_CONTAINER_SELECTOR);
-
         try {
+            await this.page.waitForSelector(USER_COUNT_CONTAINER_SELECTOR);
+
             let userCountString = await this.getInnerHtmlBySelector(USER_COUNT_SELECTOR);
             return Number(userCountString.trim().replace(',', ''));
         } catch (e) {
