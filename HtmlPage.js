@@ -26,11 +26,11 @@ class HtmlPage {
     //     }, selector, value)
     // }
     //
-    // async getFieldValue(selector) {
-    //     return this.page.evaluate((selector) => {
-    //         return document.querySelector(selector).value;
-    //     }, selector)
-    // }
+    async getFieldValue(selector) {
+        return this.page.evaluate((selector) => {
+            return document.querySelector(selector).value;
+        }, selector)
+    }
 }
 
 module.exports = HtmlPage;

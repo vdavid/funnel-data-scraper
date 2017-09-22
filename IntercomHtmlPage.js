@@ -62,7 +62,7 @@ class IntercomHtmlPage extends HtmlPage {
     }
 
     async getNumbersForAllLocaleAndUtmSettings(userCounts, metric) {
-        const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR', 'en-US'];
+        const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR', 'en-US', 'hi-IN', 'id-ID', 'vi-VN'];
         const LOCALE_AND_UTM_FILTERS = [
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc-remarketing'},
@@ -73,6 +73,13 @@ class IntercomHtmlPage extends HtmlPage {
             {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'ro-RO', utmSource: 'google', utmMedium: 'cpc-remarketing'},
             {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'tr-TR', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            {locale: 'hi-IN', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'hi-IN', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            {locale: 'id-ID', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'id-ID', utmSource: 'google', utmMedium: 'cpc-remarketing'},
+            {locale: 'vi-VN', utmSource: 'google', utmMedium: 'cpc'},
+            {locale: 'vi-VN', utmSource: 'google', utmMedium: 'cpc-remarketing'},
             {locale: 'en-US', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'en-US', utmSource: 'google', utmMedium: 'cpc-remarketing'},
             {locale: 'en-US', utmSource: 'google', utmMedium: 'cpm-ismertsegfelepito'},
@@ -180,18 +187,34 @@ class IntercomHtmlPage extends HtmlPage {
         await this.page.type(month);
 
         /* Day */
-        await this.page.click(containerSelector + ' + div select:nth-child(2)');
-        for (let i = 0; i < 32; i++) {
-            await this.page.press('ArrowUp');
-        }
-        if (day !== "1") {
-            await this.page.type(day);
-        }
+        await this.setDay(containerSelector + ' + div select:nth-child(2)', day);
 
         /* Year */
         await this.page.click(containerSelector + ' + div select:nth-child(3)');
         await this.page.type(year);
         await this.page.press('Tab');
+    }
+
+    async setDay(dayFieldSelector, day) {
+        await this.page.click(dayFieldSelector);
+        for (let i = 0; i < 32; i++) {
+            if (await this.getFieldValue(dayFieldSelector) === day) {
+                await this.page.press('Enter');
+                return;
+            }
+            await this.page.press('ArrowDown');
+        }
+        for (let i = 0; i < 32; i++) {
+            if (this.getFieldValue(dayFieldSelector) === day) {
+                await this.page.press('Enter');
+                return;
+            }
+            await this.page.press('ArrowUp');
+        }
+
+        if (day !== "1") {
+            await this.page.type(day);
+        }
     }
 
     async pressMoreFiltersButtonIfNeeded(filterName) {
