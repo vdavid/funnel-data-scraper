@@ -23,7 +23,16 @@ class IntercomHtmlPage extends HtmlPage {
 
         await this.setDateFilter('trigger_welcome_message', firstDateToInclude, numberOfDaysToInclude);
 
-        userCounts['trialSignup'] = await this.getNumbersForAllLocaleAndUtmSettings();
+        userCounts['signedUpForTrial'] = await this.getNumbersForAllLocaleAndUtmSettings();
+        return userCounts;
+    }
+
+    async getPaymentNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
+        await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
+
+        await this.setDateFilter('trigger_trial_to_paid_welcome_message', firstDateToInclude, numberOfDaysToInclude);
+
+        userCounts['paid'] = await this.getNumbersForAllLocaleAndUtmSettings();
         return userCounts;
     }
 
@@ -41,7 +50,7 @@ class IntercomHtmlPage extends HtmlPage {
 
         await this.setDateFilter('payment_invoicing_data_submitted', firstDateToInclude, numberOfDaysToInclude);
 
-        userCounts['payment'] = await this.getNumbersForAllLocaleAndUtmSettings();
+        userCounts['visitedPaymentFunnel'] = await this.getNumbersForAllLocaleAndUtmSettings();
         return userCounts;
     }
 
@@ -64,7 +73,7 @@ class IntercomHtmlPage extends HtmlPage {
     }
 
     async getNumbersForAllLocaleAndUtmSettings() {
-        const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR', 'en-US', 'hi-IN', 'id-ID', 'vi-VN'];
+        const LOCALE_FILTERS = ['hu-HU', 'pl-PL', 'ro-RO', 'tr-TR', 'hi-IN', 'id-ID', 'vi-VN', 'en-US'];
         const LOCALE_AND_UTM_FILTERS = [
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc'},
             {locale: 'hu-HU', utmSource: 'google', utmMedium: 'cpc-remarketing'},

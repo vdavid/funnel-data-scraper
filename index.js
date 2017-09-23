@@ -32,6 +32,7 @@ async function run() {
 
     let userCounts = {};
     userCounts = await intercomHtmlPage.getTrialSignupNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
+    userCounts = await intercomHtmlPage.getPaymentNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
     userCounts = await intercomHtmlPage.getSlackNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
     userCounts = await intercomHtmlPage.getSubmissionCountRelatedNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
     userCounts = await intercomHtmlPage.getPaymentFunnelNumbers(userCounts, FIRST_DAY_OF_WEEK_TO_SCRAPE, DAY_COUNT_TO_SCRAPE);
