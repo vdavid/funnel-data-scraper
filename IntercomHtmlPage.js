@@ -55,7 +55,7 @@ class IntercomHtmlPage extends HtmlPage {
     }
 
     async getSubmissionCountRelatedNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
-        const SUBMISSION_COUNT_FILTER_VALUES = [0, 4, 14];
+        const SUBMISSION_COUNT_FILTER_VALUES = [0, 4, 24];
 
         for (let i = 0; i < SUBMISSION_COUNT_FILTER_VALUES.length; i++) {
             let submissionCount = SUBMISSION_COUNT_FILTER_VALUES[i];
