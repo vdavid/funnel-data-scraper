@@ -30,7 +30,7 @@ class IntercomHtmlPage extends HtmlPage {
     async getPaymentNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
 
-        await this.setDateFilter('trigger_trial_to_paid_welcome_message', firstDateToInclude, numberOfDaysToInclude);
+        await this.setDateFilter('payment_made', firstDateToInclude, numberOfDaysToInclude);
 
         userCounts['paid'] = await this.getNumbersForAllLocaleAndUtmSettings();
         return userCounts;
