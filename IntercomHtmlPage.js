@@ -21,7 +21,7 @@ class IntercomHtmlPage extends HtmlPage {
     async getTrialSignupNumbers(userCounts, firstDateToInclude, numberOfDaysToInclude) {
         await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
 
-        await this.setDateFilter('trigger_welcome_message', firstDateToInclude, numberOfDaysToInclude);
+        await this.setDateFilter('arrived_to_orange', firstDateToInclude, numberOfDaysToInclude);
 
         userCounts['signedUpForTrial'] = await this.getNumbersForAllLocaleAndUtmSettings();
         return userCounts;
@@ -62,7 +62,7 @@ class IntercomHtmlPage extends HtmlPage {
 
             await this.page.goto('https://app.intercom.io/a/apps/sukanddp/users/segments/all-users');
 
-            await this.setDateFilter('Signed up', firstDateToInclude, numberOfDaysToInclude);
+            await this.setDateFilter('arrived_to_orange', firstDateToInclude, numberOfDaysToInclude);
 
             await this.setSimpleFilter('total_submission_count', submissionCount);
 
